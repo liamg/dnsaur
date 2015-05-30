@@ -1,0 +1,20 @@
+{
+  "name": "dnsaur",
+  "version": "0.0.0",
+  "description": "DNS client/server components in node",
+  "keywords": [
+    "dns",
+    "client",
+    "server"
+  ],
+  "homepage": "http://github.com/liamg/dnsaur",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/liamg/dnsaur.git"
+  },
+  "main": "src/dnsaur.js",
+  "license": "MIT",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}
