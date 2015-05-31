@@ -61,7 +61,7 @@ Server.prototype.handleRequest = function (data, address) {
         }
     }
 
-    var buffer = response.createBuffer();
+    var buffer = new Buffer(response.createRaw());
     this.udpSocket.send(buffer, 0, buffer.length, address.port, address.address);
     this.emit('responseSent', response, address);
 };

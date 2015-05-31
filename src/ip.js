@@ -15,23 +15,24 @@ module.exports = {
         return string;
     },
 
-    toBuffer: function (string) {
-        var buffer = new Buffer();
+    toBytes: function (string) {
+        var bytes = [];
         var parts;
         if (string.indexOf('.') === -1) {
             //ipv6
             string = string.replace(':', '');
             parts = string.match(/.{2}/g);
             parts.forEach(function (part) {
-                buffer.writeInt8(parseInt(part, 16));
+                bytes.push(parseInt(part, 16));
             });
         } else {
+            //ipv4
             parts = string.split('.');
             parts.forEach(function (part) {
-                buffer.writeInt8(parseInt(part, 10));
+                bytes.push(parseInt(part, 10));
             });
         }
-        return buffer;
+        return bytes;
     }
 
 };

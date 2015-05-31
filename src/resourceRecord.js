@@ -11,13 +11,13 @@ var ResourceRecord = function () {
 ResourceRecord.prototype.getRecordType = function () {
     return require('./util.js').invertObject(ResourceRecord.TYPE)[this.type];
 };
-ResourceRecord.prototype.createBuffer = function(){
+ResourceRecord.prototype.createRaw = function(){
     var bytes = DNSString.encode(this.name);
     bytes.push((this.type >> 8) & 0xFF);
     bytes.push(this.type & 0xFF);
     bytes.push((this.rrClass >> 8) & 0xFF);
     bytes.push(this.rrClass & 0xFF);
-    return new Buffer(bytes);
+    return bytes;
 };
 
 var QuestionResourceRecord = function () {
@@ -83,25 +83,19 @@ AnswerResourceRecord.parse = function (buffer) {
     return rr;
 };
 
-AnswerResourceRecord.prototype.createBuffer = function(){
-
+AnswerResourceRecord.prototype.createRaw = function(){
     var bytes = DNSString.encode(this.name);
     bytes.push((this.type >> 8) & 0xFF);
     bytes.push(this.type & 0xFF);
     bytes.push((this.rrClass >> 8) & 0xFF);
     bytes.push(this.rrClass & 0xFF);
-
     bytes.push((this.ttl >> 24) & 0xFF);
     bytes.push((this.ttl >> 16) & 0xFF);
     bytes.push((this.ttl >> 8) & 0xFF);
     bytes.push(this.ttl & 0xFF);
-
     bytes.push((this.resourceDataLength >> 8) & 0xFF);
     bytes.push(this.resourceDataLength & 0xFF);
-
-    var rDataBytes = Uint8Array(this.resourceData.createBuffer());
-
-    return new Buffer(bytes.concat(rDataBytes));
+    return bytes.concat(this.resourceData.createRaw());
 };
 
 // http://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses-3.htm#Table_166

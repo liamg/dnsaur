@@ -44,8 +44,8 @@ AResourceData.parse = function (buffer) {
     aRData.address = buffer.slice(0, 4);
     return aRData;
 };
-AResourceData.prototype.createBuffer = function() {
-    return ip.toBuffer(this.address);
+AResourceData.prototype.createRaw = function() {
+    return ip.toBytes(this.address);
 };
 
 var NSResourceData = function () {
@@ -56,8 +56,8 @@ NSResourceData.parse = function (buffer) {
     nsRData.name = DNSString.decode(buffer);
     return nsRData;
 };
-NSResourceData.prototype.createBuffer = function(){
-    return new Buffer(DNSString.encode(this.name));
+NSResourceData.prototype.createRaw = function(){
+    return DNSString.encode(this.name);
 };
 
 var PTRResourceData = function () {
@@ -80,7 +80,12 @@ MXResourceData.parse = function (buffer) {
     mxRData.mailExchanger = DNSString.decode(buffer.slice(2));
     return mxRData;
 };
-// @todo createBuffer()
+MXResourceData.prototype.createRaw = function(){
+    var bytes = [];
+    bytes.push((this.preference >> 8) & 0xFF);
+    bytes.push((this.preference) & 0xFF);
+    return bytes.concat(DNSString.toBytes(this.mailExchanger));
+};
 
 var SOAResourceData = function () {
     this.primaryNS = '';
@@ -107,7 +112,39 @@ SOAResourceData.parse = function (buffer) {
     
     return rData;
 };
-// @todo createBuffer()
+SOAResourceData.prototype.createRaw = function(){
+    var bytes = [];
+
+    bytes = bytes.concat(DNSString.toBytes(this.primaryNS));
+    bytes = bytes.concat(DNSString.toBytes(this.adminMailbox));
+
+    bytes.push((this.serialNumber >> 24) & 0xFF);
+    bytes.push((this.serialNumber >> 16) & 0xFF);
+    bytes.push((this.serialNumber >> 8) & 0xFF);
+    bytes.push((this.serialNumber) & 0xFF);
+
+    bytes.push((this.refreshInterval >> 24) & 0xFF);
+    bytes.push((this.refreshInterval >> 16) & 0xFF);
+    bytes.push((this.refreshInterval >> 8) & 0xFF);
+    bytes.push((this.refreshInterval) & 0xFF);
+
+    bytes.push((this.retryInterval >> 24) & 0xFF);
+    bytes.push((this.retryInterval >> 16) & 0xFF);
+    bytes.push((this.retryInterval >> 8) & 0xFF);
+    bytes.push((this.retryInterval) & 0xFF);
+
+    bytes.push((this.expirationLimit >> 24) & 0xFF);
+    bytes.push((this.expirationLimit >> 16) & 0xFF);
+    bytes.push((this.expirationLimit >> 8) & 0xFF);
+    bytes.push((this.expirationLimit) & 0xFF);
+
+    bytes.push((this.minimumTTL >> 24) & 0xFF);
+    bytes.push((this.minimumTTL >> 16) & 0xFF);
+    bytes.push((this.minimumTTL >> 8) & 0xFF);
+    bytes.push((this.minimumTTL) & 0xFF);
+
+    return bytes;
+};
 
 module.exports = {
     ResourceData: ResourceData,

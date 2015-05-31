@@ -29,92 +29,11 @@ var Message = function () {
         authorities: [],
         additionals: []
     };
-
-    this.getType = function () {
-        return this.header.qr;
-    };
-
-    this.getOpCode = function () {
-        return this.header.opcode;
-    };
-
-    this.getAA = function(){
-        return this.header.aa;
-    };
-
-    this.getTC = function(){
-        return this.header.tc;
-    };
-
-    this.getRD = function(){
-        return this.header.rd;
-    };
-
-    this.getRA = function(){
-        return this.header.ra;
-    };
-
-    this.getZ = function(){
-        return this.header.z;
-    };
-
-    this.getAD = function(){
-        return this.header.ad;
-    };
-
-    this.getCD = function(){
-        return this.header.cd;
-    };
-
-    this.getRCode = function(){
-        return this.header.rcode;
-    };
-
-    this.setIdentification = function (id) {
-        this.header.identification = id;
-    };
-
-    this.getIdentification = function () {
-        return this.header.identification;
-    };
-
-    this.setType = function (type) {
-        switch (type) {
-            case Message.TYPE.QUERY:
-            case Message.TYPE.RESPONSE:
-                this.header.qr = type;
-                break;
-            default:
-                throw new Error('Unknown DNS message type supplied.');
-        }
-    };
-
-    this.addQuestionResourceRecord = function (questionResourceRecord) {
-        this.header.totalQuestions++;
-        this.resourceRecords.questions.push(questionResourceRecord);
-    };
-
-    this.addAnswerResourceRecord = function (answerResourceRecord) {
-        this.header.totalAnswerRRs++;
-        this.resourceRecords.answers.push(answerResourceRecord);
-    };
-
-    this.addAuthorityResourceRecord = function (authorityResourceRecord) {
-        this.header.totalAuthorityRRs++;
-        this.resourceRecords.authorities.push(authorityResourceRecord);
-    };
-
-    this.addAdditionalResourceRecord = function (additionalResourceRecord) {
-        this.header.totalAdditionalRRs++;
-        this.resourceRecords.additionals.push(additionalResourceRecord);
-    };
 };
 
 Message.prototype = {
 
-    // @todo Replace createBuffer() methods with createRaw(), returning byte arrays
-
-    createBuffer: function () {
+    createRaw: function () {
         var bytes = [];
 
         bytes.push( (this.getIdentification() >> 8) & 0xFF );
@@ -135,16 +54,143 @@ Message.prototype = {
         flags2 |= ((this.getCD() << 7) >> 3);
         flags2 |= this.getRCode();
 
-        // @todo totals, resource records
-        
         bytes.push( flags1 & 0xFF );
         bytes.push( flags2 & 0xFF );
 
-        //var questions = this.getQuestions();
+        bytes.push( (this.getQuestionCount() >> 8) & 0xFF );
+        bytes.push( this.getQuestionCount() & 0xFF );
+        bytes.push( (this.getAnswerCount() >> 8) & 0xFF );
+        bytes.push( this.getAnswerCount() & 0xFF );
+        bytes.push( (this.getAuthorityCount() >> 8) & 0xFF );
+        bytes.push( this.getAuthorityCount() & 0xFF );
+        bytes.push( (this.getAdditionalCount() >> 8) & 0xFF );
+        bytes.push( this.getAdditionalCount() & 0xFF );
 
-        //buffer.writeUInt16BE(questions.length);
+        this.getQuestions().forEach(function(resourceRecord){
+            bytes = bytes.concat(resourceRecord.createRaw());
+        });
+        this.getAnswers().forEach(function(resourceRecord){
+            bytes = bytes.concat(resourceRecord.createRaw());
+        });
+        this.getAuthorities().forEach(function(resourceRecord){
+            bytes = bytes.concat(resourceRecord.createRaw());
+        });
+        this.getAdditionals().forEach(function(resourceRecord){
+            bytes = bytes.concat(resourceRecord.createRaw());
+        });
 
-        return new Buffer(bytes);
+        return bytes;
+    },
+
+    getType: function () {
+        return this.header.qr;
+    },
+    
+    getOpCode: function () {
+        return this.header.opcode;
+    },
+    
+    getAA: function(){
+        return this.header.aa;
+    },
+    
+    getTC: function(){
+        return this.header.tc;
+    },
+    
+    getRD: function(){
+        return this.header.rd;
+    },
+    
+    getRA: function(){
+        return this.header.ra;
+    },
+    
+    getZ: function(){
+        return this.header.z;
+    },
+    
+    getAD: function(){
+        return this.header.ad;
+    },
+    
+    getCD: function(){
+        return this.header.cd;
+    },
+    
+    getRCode: function(){
+        return this.header.rcode;
+    },
+    
+    setIdentification: function (id) {
+        this.header.identification = id;
+    },
+    
+    getIdentification: function () {
+        return this.header.identification;
+    },
+    
+    setType: function (type) {
+        switch (type) {
+            case Message.TYPE.QUERY:
+            case Message.TYPE.RESPONSE:
+                this.header.qr = type;
+                break;
+            default:
+                throw new Error('Unknown DNS message type supplied.');
+        }
+    },
+    
+    addQuestionResourceRecord: function (questionResourceRecord) {
+        this.header.totalQuestions++;
+        this.resourceRecords.questions.push(questionResourceRecord);
+    },
+    
+    addAnswerResourceRecord: function (answerResourceRecord) {
+        this.header.totalAnswerRRs++;
+        this.resourceRecords.answers.push(answerResourceRecord);
+    },
+    
+    addAuthorityResourceRecord: function (authorityResourceRecord) {
+        this.header.totalAuthorityRRs++;
+        this.resourceRecords.authorities.push(authorityResourceRecord);
+    },
+    
+    addAdditionalResourceRecord: function (additionalResourceRecord) {
+       this.header.totalAdditionalRRs++;
+        this.resourceRecords.additionals.push(additionalResourceRecord);
+    },
+    
+    getQuestionCount: function(){
+        return header.totalQuestions;
+    },
+    
+    getQuestions: function(){
+        return this.resourceRecords.questions;
+    },
+    
+    getAnswerCount: function(){
+        return header.totalAnswerRRs;
+    },
+    
+    getAnswers: function(){
+        return this.resourceRecords.answers;
+    },
+    
+    getAuthorityCount: function(){
+        return header.totalAuthorityRRs;
+    },
+    
+    getAuthorities: function(){
+        return this.resourceRecords.authorities;
+    },
+    
+    getAdditionalCount: function(){
+        return header.totalAdditionalRRs;
+    },
+    
+    getAdditionals: function(){
+        return this.resourceRecords.additionals;
     }
 };
 
