@@ -1,24 +1,26 @@
 var AnswerResourceRecord = require('./resourceRecord').AnswerResourceRecord;
 var QuestionResourceRecord = require('./resourceRecord').QuestionResourceRecord;
 
+// http://www.zytrax.com/books/dns/ch15/
+
 var Message = function () {
 
     this.header = {
         identification: Math.floor(Math.random() * 0xFFFF),      // 2 bytes, unique query/response identifier
-        qr: 0,                  // 1 bit, 0=query, 1=response
-        opcode: 0,              // 4 bits
-        aa: 0,                  // 1 bit
-        tc: 0,                  // 1 bit
-        rd: 0,                  // 1 bit
-        ra: 0,                  // 1 bit
-        z: 0,                   // 1 bit
-        ad: 0,                  // 1 bit
-        cd: 0,                  // 1 bit
-        rcode: 0,               // 4 bits
-        totalQuestions: 0,      // 2 bytes
-        totalAnswerRRs: 0,      // 2 bytes
-        totalAuthorityRRs: 0,   // 2 bytes
-        totalAdditionalRRs: 0   // 2 bytes
+        qr: 0,                          // 1 bit, 0=query, 1=response
+        opcode: Message.OPCODE.QUERY,   // 4 bits Operation type
+        aa: 0,                          // 1 bit Authoritative Answer
+        tc: 0,                          // 1 bit Truncated
+        rd: 0,                          // 1 bit Recursion desired - don't have to support this, just leave it set to zero
+        ra: 0,                          // 1 bit Recursion available
+        z: 0,                           // 1 bit Reserved
+        ad: 0,                          // 1 bit Reserved
+        cd: 0,                          // 1 bit Reserved
+        rcode: Message.RCODE.NOERROR,   // 4 bits Response code. Ignored on request.
+        totalQuestions: 0,              // 2 bytes
+        totalAnswerRRs: 0,              // 2 bytes
+        totalAuthorityRRs: 0,           // 2 bytes
+        totalAdditionalRRs: 0           // 2 bytes
     };
 
     this.resourceRecords = {
@@ -30,6 +32,42 @@ var Message = function () {
 
     this.getType = function () {
         return this.header.qr;
+    };
+
+    this.getOpCode = function () {
+        return this.header.opcode;
+    };
+
+    this.getAA = function(){
+        return this.header.aa;
+    };
+
+    this.getTC = function(){
+        return this.header.tc;
+    };
+
+    this.getRD = function(){
+        return this.header.rd;
+    };
+
+    this.getRA = function(){
+        return this.header.ra;
+    };
+
+    this.getZ = function(){
+        return this.header.z;
+    };
+
+    this.getAD = function(){
+        return this.header.ad;
+    };
+
+    this.getCD = function(){
+        return this.header.cd;
+    };
+
+    this.getRCode = function(){
+        return this.header.rcode;
     };
 
     this.setIdentification = function (id) {
@@ -73,30 +111,41 @@ var Message = function () {
 };
 
 Message.prototype = {
-    getBuffer: function () {
-        var buffer = new Buffer(0xFFFF);
 
-        buffer.writeUInt16BE(this.getIdentification(), 0);
+    // @todo Replace createBuffer() methods with createRaw(), returning byte arrays
 
-        var flags = 0;
+    createBuffer: function () {
+        var bytes = [];
 
-        flags |= (this.getType() << 15); // QR
+        bytes.push( (this.getIdentification() >> 8) & 0xFF );
+        bytes.push( this.getIdentification() & 0xFF );
 
-        /// @todo Finish this off. Too tired tonight...
+        var flags1 = 0;
+        var flags2 = 0;
 
-        buffer.writeUInt16BE(flags, 2);
+        flags1 |= (this.getType() << 7); // QR
+        flags1 |= ((this.getOpCode() << 4) >> 1); // OPCODE
+        flags1 |= ((this.getAA() << 7) >> 5); // aa
+        flags1 |= ((this.getTC() << 7) >> 6); // tc
+        flags1 |= ((this.getRD() << 7) >> 7); // rd
+
+        flags2 |= (this.getRA() << 7);
+        flags2 |= ((this.getZ() << 7) >> 1);
+        flags2 |= ((this.getAD() << 7) >> 2);
+        flags2 |= ((this.getCD() << 7) >> 3);
+        flags2 |= this.getRCode();
+
+        // @todo totals, resource records
+        
+        bytes.push( flags1 & 0xFF );
+        bytes.push( flags2 & 0xFF );
 
         //var questions = this.getQuestions();
 
         //buffer.writeUInt16BE(questions.length);
 
-        return buffer;
+        return new Buffer(bytes);
     }
-};
-
-Message.TYPE = {
-    QUERY: 0,
-    RESPONSE: 1
 };
 
 Message.parse = function (buffer) {
@@ -157,6 +206,26 @@ Message.parse = function (buffer) {
 
 
     return message;
+};
+
+Message.TYPE = {
+    QUERY: 0,
+    RESPONSE: 1
+};
+
+Message.OPCODE = {
+    QUERY: 0,
+    IQUERY: 1,
+    STATUS: 2
+};
+
+Message.RCODE = {
+    NOERROR: 0,
+    FORMATERROR: 1,
+    SERVERFAILURE: 2,
+    NAMEERROR: 3,
+    NOTIMPLEMENTED: 4,
+    REFUSED: 5
 };
 
 module.exports = Message;

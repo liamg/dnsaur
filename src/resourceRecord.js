@@ -1,39 +1,29 @@
 var util = require('util');
 var DNSString = require('./dnsString');
-var ResourceData = require('./resourceData');
+var ResourceData = require('./resourceData').ResourceData;
 
 var ResourceRecord = function () {
-
     this.name = '';
-    this.type = '';
-    this.rrClass = '';
+    this.type = ResourceRecord.TYPE.A;
+    this.rrClass = ResourceRecord.CLASS.IN;
     this.length = 0;
-
 };
-
-ResourceRecord.prototype = {
-    getRecordType: function () {
-        return require('./util.js').invertObject(ResourceRecord.TYPE)[this.type];
-    }
+ResourceRecord.prototype.getRecordType = function () {
+    return require('./util.js').invertObject(ResourceRecord.TYPE)[this.type];
+};
+ResourceRecord.prototype.createBuffer = function(){
+    var bytes = DNSString.encode(this.name);
+    bytes.push((this.type >> 8) & 0xFF);
+    bytes.push(this.type & 0xFF);
+    bytes.push((this.rrClass >> 8) & 0xFF);
+    bytes.push(this.rrClass & 0xFF);
+    return new Buffer(bytes);
 };
 
 var QuestionResourceRecord = function () {
 
 };
 util.inherits(QuestionResourceRecord, ResourceRecord);
-
-var AnswerResourceRecord = function () {
-
-    this.name = '';
-    this.type = '';
-    this.rrClass = '';
-    this.length = 0;
-    this.ttl = '';
-    this.resourceDataLength = 0;
-    this.resourceData = null;
-
-};
-util.inherits(AnswerResourceRecord, ResourceRecord);
 
 QuestionResourceRecord.parse = function (buffer) {
 
@@ -53,6 +43,19 @@ QuestionResourceRecord.parse = function (buffer) {
 
     return rr;
 };
+
+var AnswerResourceRecord = function () {
+
+    this.name = '';
+    this.type = ResourceRecord.TYPE.A;
+    this.rrClass = ResourceRecord.CLASS.IN;
+    this.length = 0;
+    this.ttl = '';
+    this.resourceDataLength = 0;
+    this.resourceData = null;
+
+};
+util.inherits(AnswerResourceRecord, ResourceRecord);
 
 AnswerResourceRecord.parse = function (buffer) {
 
@@ -78,6 +81,27 @@ AnswerResourceRecord.parse = function (buffer) {
     rr.length = offset + rr.resourceDataLength;
 
     return rr;
+};
+
+AnswerResourceRecord.prototype.createBuffer = function(){
+
+    var bytes = DNSString.encode(this.name);
+    bytes.push((this.type >> 8) & 0xFF);
+    bytes.push(this.type & 0xFF);
+    bytes.push((this.rrClass >> 8) & 0xFF);
+    bytes.push(this.rrClass & 0xFF);
+
+    bytes.push((this.ttl >> 24) & 0xFF);
+    bytes.push((this.ttl >> 16) & 0xFF);
+    bytes.push((this.ttl >> 8) & 0xFF);
+    bytes.push(this.ttl & 0xFF);
+
+    bytes.push((this.resourceDataLength >> 8) & 0xFF);
+    bytes.push(this.resourceDataLength & 0xFF);
+
+    var rDataBytes = Uint8Array(this.resourceData.createBuffer());
+
+    return new Buffer(bytes.concat(rDataBytes));
 };
 
 // http://www.tcpipguide.com/free/t_DNSNameServerDataStorageResourceRecordsandClasses-3.htm#Table_166

@@ -5,6 +5,9 @@ var Message = require('./message');
 var ResourceRecord = require('./resourceRecord').ResourceRecord;
 var AnswerResourceRecord = require('./resourceRecord').AnswerResourceRecord;
 
+// @todo Add options to all classes
+// @todo Add proxy fallback mode - if operation isn't supported, pass the unedited packet to a fallback DNS server and proxy back the response
+
 function Server() {
     this.udpSocket = dgram.createSocket("udp4");
 
@@ -58,7 +61,7 @@ Server.prototype.handleRequest = function (data, address) {
         }
     }
 
-    var buffer = response.getBuffer();
+    var buffer = response.createBuffer();
     this.udpSocket.send(buffer, 0, buffer.length, address.port, address.address);
     this.emit('responseSent', response, address);
 };
