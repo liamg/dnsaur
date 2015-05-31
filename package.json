@@ -12,9 +12,14 @@
     "type": "git",
     "url": "http://github.com/liamg/dnsaur.git"
   },
-  "main": "src/dnsaur.js",
+  "main": "lib/dnsaur.js",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "test": "mocha"
+  },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "mocha": "~2.2.5",
+    "chai": "~2.3.0"
+  }
 }
